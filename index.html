@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Selamat Ulang Tahun 🎉</title>
+<style>
+  :root{
+    --bg1:#fff0f6;
+    --bg2:#e8f7ff;
+    --accent:#ff4d6d;
+    --text:#2b2b2b;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;color:var(--text);}
+  body{
+    background: linear-gradient(135deg,var(--bg1),var(--bg2));
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+
+  .card{
+    width:100%;
+    max-width:920px;
+    background:rgba(255,255,255,0.9);
+    box-shadow:0 10px 30px rgba(0,0,0,0.12);
+    border-radius:18px;
+    padding:36px;
+    text-align:center;
+    position:relative;
+    z-index:2;
+  }
+
+  h1{
+    font-size:2.4rem;
+    margin:0 0 8px 0;
+    letter-spacing:0.4px;
+    color:var(--accent);
+  }
+  p.lead{margin:0 0 20px 0;font-size:1.06rem;color:#444;}
+
+  .cake {
+    display:inline-block;
+    margin:14px 0 18px;
+    transform:translateZ(0);
+  }
+
+  /* simple cake emoji styling */
+  .cake span{font-size:3rem;display:inline-block;transform:translateY(2px)}
+
+  .buttons{
+    margin-top:18px;
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  button{
+    background:var(--accent);
+    color:white;
+    border:0;
+    padding:12px 18px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:600;
+    box-shadow:0 6px 18px rgba(255,77,109,0.18);
+  }
+  button.secondary{
+    background:transparent;
+    color:var(--accent);
+    border:2px solid rgba(255,77,109,0.18);
+    box-shadow:none;
+  }
+
+  /* balloons */
+  .sky{
+    position:fixed;
+    left:0;right:0;top:0;bottom:0;
+    pointer-events:none;
+    z-index:1;
+  }
+  .balloon{
+    position: absolute;
+    width:72px;
+    height:96px;
+    border-radius:50% 50% 45% 45%;
+    transform-origin:center bottom;
+    animation: floatUp linear infinite;
+    box-shadow: inset -8px -10px 18px rgba(255,255,255,0.18);
+  }
+  .balloon::after{
+    content:'';
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:-26px;
+    width:2px;
+    height:34px;
+    background:rgba(60,60,60,0.15);
+  }
+  @keyframes floatUp{
+    0%{ transform: translateY(30vh) rotate(-6deg); opacity:0; }
+    10%{ opacity:1; }
+    100%{ transform: translateY(-140vh) rotate(8deg); opacity:0.9; }
+  }
+
+  /* small instructions */
+  .hint{font-size:0.9rem;color:#666;margin-top:12px;}
+  /* responsive */
+  @media (max-width:520px){
+    .card{padding:22px;border-radius:14px;}
+    h1{font-size:1.6rem;}
+    .cake span{font-size:2.4rem}
+  }
+</style>
+</head>
+<body>
+
+<!-- confetti canvas -->
+<canvas id="confetti-canvas" style="position:fixed;left:0;top:0;width:100%;height:100%;z-index:3;pointer-events:none;"></canvas>
+
+<!-- floating balloons container -->
+<div class="sky" id="sky"></div>
+
+<div class="card" role="main" aria-labelledby="title">
+  <h1 id="title">🎉 Selamat Ulang Tahun! 🎂</h1>
+  <div class="cake" aria-hidden="true"><span>🎂</span></div>
+  <p class="lead">Semoga panjang umur, sehat, dan penuh kebahagiaan. Semoga semua harapanmu tercapai!</p>
+
+  <div class="buttons">
+    <button id="playBtn">▶️ Putar Musik & Rayakan!</button>
+    <button id="confettiBtn" class="secondary">🎊 Lepaskan Confetti</button>
+    <button id="shareBtn" class="secondary">🔗 Salin Link</button>
+  </div>
+
+  <p class="hint">Jika musik tidak otomatis terdengar, tekan tombol "Putar Musik & Rayakan!"</p>
+</div>
+
+<!-- Audio: letakkan file music.mp3 di root repository -->
+<audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
+
+<script>
+/* ---------- BALLOONS ---------- */
+const sky = document.getElementById('sky');
+const colors = ['#FF6B6B','#FFD166','#6BCB77','#4D96FF','#B388EB','#FF9F1C'];
+
+function makeBalloon(leftPercent, delay, color, scale){
+  const b = document.createElement('div');
+  b.className = 'balloon';
+  b.style.left = leftPercent + '%';
+  b.style.bottom = '-20vh';
+  b.style.background = `radial-gradient(circle at 35% 25%, rgba(255,255,255,0.6), transparent 20%), ${color}`;
+  b.style.animationDuration = (10 + Math.random()*10) + 's';
+  b.style.animationDelay = delay + 's';
+  b.style.transform = `scale(${scale})`;
+  sky.appendChild(b);
+  // remove after animation end to keep DOM clean
+  setTimeout(()=> b.remove(), ( (10 + Math.random()*10) + Math.abs(delay) ) * 1000 + 2000);
+}
+
+function spawnBalloons(count=8){
+  for(let i=0;i<count;i++){
+    makeBalloon(5 + Math.random()*90, Math.random()*2, colors[Math.floor(Math.random()*colors.length)], 0.7 + Math.random()*0.8);
+  }
+}
+
+/* spawn a few initial ones */
+spawnBalloons(10);
+/* occasional balloons */
+setInterval(()=> spawnBalloons(3), 7000);
+
+/* ---------- CONFETTI ---------- */
+const canvas = document.getElementById('confetti-canvas');
+const ctx = canvas.getContext('2d');
+let W = canvas.width = innerWidth;
+let H = canvas.height = innerHeight;
+window.addEventListener('resize', () => { W = canvas.width = innerWidth; H = canvas.height = innerHeight; });
+
+let confettiPieces = [];
+
+function random(min,max){ return Math.random()*(max-min)+min; }
+function makeConfetti(count=120){
+  confettiPieces = [];
+  for(let i=0;i<count;i++){
+    confettiPieces.push({
+      x: random(0, W),
+      y: random(-H, 0),
+      w: random(6, 12),
+      h: random(8, 14),
+      vx: random(-2,2),
+      vy: random(2,6),
+      angle: random(0, Math.PI*2),
+      spin: random(-0.1,0.1),
+      color: colors[Math.floor(Math.random()*colors.length)]
+    });
+  }
+}
+function updateConfetti(){
+  ctx.clearRect(0,0,W,H);
+  for(const p of confettiPieces){
+    p.x += p.vx;
+    p.y += p.vy;
+    p.angle += p.spin;
+    p.vy += 0.03; // gravity
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.angle);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+  }
+  // remove pieces that are off-screen
+  confettiPieces = confettiPieces.filter(p => p.y - p.h < H + 20);
+  if(confettiPieces.length) requestAnimationFrame(updateConfetti);
+}
+
+/* ---------- AUDIO & BUTTONS ---------- */
+const music = document.getElementById('bgMusic');
+const playBtn = document.getElementById('playBtn');
+const confettiBtn = document.getElementById('confettiBtn');
+const shareBtn = document.getElementById('shareBtn');
+
+function startParty(){
+  // spawn more balloons
+  spawnBalloons(14);
+  // confetti
+  makeConfetti(180);
+  updateConfetti();
+  // try to play music
+  const p = music.play();
+  if(p !== undefined){
+    p.catch(()=> {
+      // autoplay blocked — show a small prompt (button already visible)
+      console.log('Autoplay blocked; user interaction required.');
+    });
+  }
+}
+
+/* Play & animate on button */
+playBtn.addEventListener('click', () => {
+  startParty();
+  // small visual feedback
+  playBtn.textContent = '🎶 Musik Diputar!';
+  playBtn.disabled = true;
+  setTimeout(()=> { playBtn.disabled = false; playBtn.textContent='▶️ Putar Musik & Rayakan!'; }, 3000);
+});
+
+confettiBtn.addEventListener('click', () => {
+  makeConfetti(220);
+  updateConfetti();
+});
+
+shareBtn.addEventListener('click', async () => {
+  const url = location.href;
+  try {
+    await navigator.clipboard.writeText(url);
+    shareBtn.textContent = '✅ Link Tersalin';
+    setTimeout(()=> shareBtn.textContent = '🔗 Salin Link', 2000);
+  } catch(e){
+    alert('Gagal menyalin. Silakan salin manual: ' + url);
+  }
+});
+
+/* optional: also trigger small surprise after a bit */
+setTimeout(()=> { makeConfetti(80); updateConfetti(); }, 6000);
+</script>
+</body>
+</html><!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Selamat Ulang Tahun 🎉</title>
+<style>
+  :root{
+    --bg1:#fff0f6;
+    --bg2:#e8f7ff;
+    --accent:#ff4d6d;
+    --text:#2b2b2b;
+  }
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial,sans-serif;color:var(--text);}
+  body{
+    background: linear-gradient(135deg,var(--bg1),var(--bg2));
+    overflow:hidden;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+
+  .card{
+    width:100%;
+    max-width:920px;
+    background:rgba(255,255,255,0.9);
+    box-shadow:0 10px 30px rgba(0,0,0,0.12);
+    border-radius:18px;
+    padding:36px;
+    text-align:center;
+    position:relative;
+    z-index:2;
+  }
+
+  h1{
+    font-size:2.4rem;
+    margin:0 0 8px 0;
+    letter-spacing:0.4px;
+    color:var(--accent);
+  }
+  p.lead{margin:0 0 20px 0;font-size:1.06rem;color:#444;}
+
+  .cake {
+    display:inline-block;
+    margin:14px 0 18px;
+    transform:translateZ(0);
+  }
+
+  /* simple cake emoji styling */
+  .cake span{font-size:3rem;display:inline-block;transform:translateY(2px)}
+
+  .buttons{
+    margin-top:18px;
+    display:flex;
+    gap:10px;
+    justify-content:center;
+    flex-wrap:wrap;
+  }
+  button{
+    background:var(--accent);
+    color:white;
+    border:0;
+    padding:12px 18px;
+    border-radius:10px;
+    cursor:pointer;
+    font-weight:600;
+    box-shadow:0 6px 18px rgba(255,77,109,0.18);
+  }
+  button.secondary{
+    background:transparent;
+    color:var(--accent);
+    border:2px solid rgba(255,77,109,0.18);
+    box-shadow:none;
+  }
+
+  /* balloons */
+  .sky{
+    position:fixed;
+    left:0;right:0;top:0;bottom:0;
+    pointer-events:none;
+    z-index:1;
+  }
+  .balloon{
+    position: absolute;
+    width:72px;
+    height:96px;
+    border-radius:50% 50% 45% 45%;
+    transform-origin:center bottom;
+    animation: floatUp linear infinite;
+    box-shadow: inset -8px -10px 18px rgba(255,255,255,0.18);
+  }
+  .balloon::after{
+    content:'';
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:-26px;
+    width:2px;
+    height:34px;
+    background:rgba(60,60,60,0.15);
+  }
+  @keyframes floatUp{
+    0%{ transform: translateY(30vh) rotate(-6deg); opacity:0; }
+    10%{ opacity:1; }
+    100%{ transform: translateY(-140vh) rotate(8deg); opacity:0.9; }
+  }
+
+  /* small instructions */
+  .hint{font-size:0.9rem;color:#666;margin-top:12px;}
+  /* responsive */
+  @media (max-width:520px){
+    .card{padding:22px;border-radius:14px;}
+    h1{font-size:1.6rem;}
+    .cake span{font-size:2.4rem}
+  }
+</style>
+</head>
+<body>
+
+<!-- confetti canvas -->
+<canvas id="confetti-canvas" style="position:fixed;left:0;top:0;width:100%;height:100%;z-index:3;pointer-events:none;"></canvas>
+
+<!-- floating balloons container -->
+<div class="sky" id="sky"></div>
+
+<div class="card" role="main" aria-labelledby="title">
+  <h1 id="title">🎉 Selamat Ulang Tahun! 🎂</h1>
+  <div class="cake" aria-hidden="true"><span>🎂</span></div>
+  <p class="lead">Semoga panjang umur, sehat, dan penuh kebahagiaan. Semoga semua harapanmu tercapai!</p>
+
+  <div class="buttons">
+    <button id="playBtn">▶️ Putar Musik & Rayakan!</button>
+    <button id="confettiBtn" class="secondary">🎊 Lepaskan Confetti</button>
+    <button id="shareBtn" class="secondary">🔗 Salin Link</button>
+  </div>
+
+  <p class="hint">Jika musik tidak otomatis terdengar, tekan tombol "Putar Musik & Rayakan!"</p>
+</div>
+
+<!-- Audio: letakkan file music.mp3 di root repository -->
+<audio id="bgMusic" src="music.mp3" preload="auto" loop></audio>
+
+<script>
+/* ---------- BALLOONS ---------- */
+const sky = document.getElementById('sky');
+const colors = ['#FF6B6B','#FFD166','#6BCB77','#4D96FF','#B388EB','#FF9F1C'];
+
+function makeBalloon(leftPercent, delay, color, scale){
+  const b = document.createElement('div');
+  b.className = 'balloon';
+  b.style.left = leftPercent + '%';
+  b.style.bottom = '-20vh';
+  b.style.background = `radial-gradient(circle at 35% 25%, rgba(255,255,255,0.6), transparent 20%), ${color}`;
+  b.style.animationDuration = (10 + Math.random()*10) + 's';
+  b.style.animationDelay = delay + 's';
+  b.style.transform = `scale(${scale})`;
+  sky.appendChild(b);
+  // remove after animation end to keep DOM clean
+  setTimeout(()=> b.remove(), ( (10 + Math.random()*10) + Math.abs(delay) ) * 1000 + 2000);
+}
+
+function spawnBalloons(count=8){
+  for(let i=0;i<count;i++){
+    makeBalloon(5 + Math.random()*90, Math.random()*2, colors[Math.floor(Math.random()*colors.length)], 0.7 + Math.random()*0.8);
+  }
+}
+
+/* spawn a few initial ones */
+spawnBalloons(10);
+/* occasional balloons */
+setInterval(()=> spawnBalloons(3), 7000);
+
+/* ---------- CONFETTI ---------- */
+const canvas = document.getElementById('confetti-canvas');
+const ctx = canvas.getContext('2d');
+let W = canvas.width = innerWidth;
+let H = canvas.height = innerHeight;
+window.addEventListener('resize', () => { W = canvas.width = innerWidth; H = canvas.height = innerHeight; });
+
+let confettiPieces = [];
+
+function random(min,max){ return Math.random()*(max-min)+min; }
+function makeConfetti(count=120){
+  confettiPieces = [];
+  for(let i=0;i<count;i++){
+    confettiPieces.push({
+      x: random(0, W),
+      y: random(-H, 0),
+      w: random(6, 12),
+      h: random(8, 14),
+      vx: random(-2,2),
+      vy: random(2,6),
+      angle: random(0, Math.PI*2),
+      spin: random(-0.1,0.1),
+      color: colors[Math.floor(Math.random()*colors.length)]
+    });
+  }
+}
+function updateConfetti(){
+  ctx.clearRect(0,0,W,H);
+  for(const p of confettiPieces){
+    p.x += p.vx;
+    p.y += p.vy;
+    p.angle += p.spin;
+    p.vy += 0.03; // gravity
+    ctx.save();
+    ctx.translate(p.x,p.y);
+    ctx.rotate(p.angle);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+    ctx.restore();
+  }
+  // remove pieces that are off-screen
+  confettiPieces = confettiPieces.filter(p => p.y - p.h < H + 20);
+  if(confettiPieces.length) requestAnimationFrame(updateConfetti);
+}
+
+/* ---------- AUDIO & BUTTONS ---------- */
+const music = document.getElementById('bgMusic');
+const playBtn = document.getElementById('playBtn');
+const confettiBtn = document.getElementById('confettiBtn');
+const shareBtn = document.getElementById('shareBtn');
+
+function startParty(){
+  // spawn more balloons
+  spawnBalloons(14);
+  // confetti
+  makeConfetti(180);
+  updateConfetti();
+  // try to play music
+  const p = music.play();
+  if(p !== undefined){
+    p.catch(()=> {
+      // autoplay blocked — show a small prompt (button already visible)
+      console.log('Autoplay blocked; user interaction required.');
+    });
+  }
+}
+
+/* Play & animate on button */
+playBtn.addEventListener('click', () => {
+  startParty();
+  // small visual feedback
+  playBtn.textContent = '🎶 Musik Diputar!';
+  playBtn.disabled = true;
+  setTimeout(()=> { playBtn.disabled = false; playBtn.textContent='▶️ Putar Musik & Rayakan!'; }, 3000);
+});
+
+confettiBtn.addEventListener('click', () => {
+  makeConfetti(220);
+  updateConfetti();
+});
+
+shareBtn.addEventListener('click', async () => {
+  const url = location.href;
+  try {
+    await navigator.clipboard.writeText(url);
+    shareBtn.textContent = '✅ Link Tersalin';
+    setTimeout(()=> shareBtn.textContent = '🔗 Salin Link', 2000);
+  } catch(e){
+    alert('Gagal menyalin. Silakan salin manual: ' + url);
+  }
+});
+
+/* optional: also trigger small surprise after a bit */
+setTimeout(()=> { makeConfetti(80); updateConfetti(); }, 6000);
+</script>
+</body>
+  </html>
